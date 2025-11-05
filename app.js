@@ -19,10 +19,12 @@ app.use(
 const loginRoute = require("./routes/login");
 const registerRoute = require("./routes/register");
 const adminRoute = require("./routes/tenant-admin");
+const categoriesRoute = require("./routes/categories");
 
 app.use("/api/login", loginRoute);
 app.use("/api/register", registerRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/categories", categoriesRoute);
 
 app.use(errorHandler);
 
