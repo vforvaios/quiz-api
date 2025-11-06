@@ -1,25 +1,24 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const db = require("../services/db");
 const config = require("../config");
-const { LOGINSCHEMA } = require("../schemas/loginregister.schema");
 require("dotenv").config();
 
 const getCategories = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const { value, error } = LOGINSCHEMA.validate(req.body);
-
-    if (error) {
-      res.status(500).json({ error: config.messages.error });
-      return false;
-    }
-
+    const [categories] = await db.query(
+      `
+      SELECT * FROM CATEGORIES WHERE isActive=?
+      `,
+      [1]
+    );
     res.status(200).json({
-      categories: [],
+      trivia_categories: categories?.map((cat) => ({
+        id: cat.id,
+        name: cat.category_name,
+      })),
     });
   } catch (error) {
     res.sendStatus(401);
+    console.log(error);
     next(error);
   }
 };
