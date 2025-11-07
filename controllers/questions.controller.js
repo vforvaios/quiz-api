@@ -38,8 +38,15 @@ const getQuestionsByCategoryAndDifficulty = async (req, res, next) => {
       ...q,
       answers: answers.filter((a) => a.questionId === q.id),
     }));
+
     res.status(200).json({
-      questionsWithAnswers,
+      results: questionsWithAnswers?.map((qa) => ({
+        question: qa.question,
+        correct_answer: qa.answers.find((ans) => ans.isCorrect).answer,
+        incorrect_answers: qa.answers
+          .filter((ans) => !ans.isCorrect)
+          ?.map((a) => a.answer),
+      })),
     });
   } catch (error) {
     res.sendStatus(401);
