@@ -47,10 +47,16 @@ const addQuestions = async (req, res, next) => {
     const answerValues = [];
     rows.forEach((r, i) => {
       const qId = questionIds[i];
+
+      // σωστή απάντηση
       answerValues.push([qId, r.Correct, true]);
-      const wrongAnswers = [r.Wrong, r["Wrong.1"], r["Wrong.2"]].filter(
-        Boolean
-      );
+
+      // λάθος απαντήσεις (όλες οι στήλες Wrong1, Wrong2, Wrong3...)
+      const wrongAnswers = Object.keys(r)
+        .filter((k) => k.toLowerCase().startsWith("wrong"))
+        .map((k) => r[k])
+        .filter(Boolean); // αφαιρεί άδεια πεδία
+
       wrongAnswers.forEach((w) => answerValues.push([qId, w, false]));
     });
 
@@ -61,8 +67,6 @@ const addQuestions = async (req, res, next) => {
 
     await conn.commit();
     res.json({ success: true, message: "CSV imported successfully" });
-
-    res.status(200).json({ fileType });
   } catch (error) {
     await conn.rollback();
     res.sendStatus(401);
