@@ -21,11 +21,11 @@ const addQuestions = async (req, res, next) => {
     await conn.beginTransaction();
 
     // 2️⃣ Batch insert ερωτήσεων
-    const questionValues = rows.map((r) => [r.Question, r.Difficulty]);
+    const questionValues = rows.map((r) => [r.Question, r.Difficulty, 1]);
     const [
       questionResult,
     ] = await conn.query(
-      "INSERT INTO QUESTIONS (question, difficultyId) VALUES ?",
+      "INSERT INTO QUESTIONS (question, difficultyId, isActive) VALUES ?",
       [questionValues]
     );
 
