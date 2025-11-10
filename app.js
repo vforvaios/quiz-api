@@ -11,7 +11,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: ["https://quickpage-fe.vercel.app", "http://localhost:5173"],
+    origin: ["https://quiz-pwa-nine.vercel.app", "http://localhost:5173"],
   })
 );
 

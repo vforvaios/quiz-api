@@ -1,11 +1,12 @@
 const bcrypt = require("bcrypt");
 const config = require("../config");
 const db = require("../services/db");
-const { v4: uuidv4 } = require("uuid");
 const { REGISTERSCHEMA } = require("../schemas/loginregister.schema");
 
 const registerUser = async (req, res, next) => {
   try {
+    const { v4: uuidv4 } = await import("uuid");
+
     const { email, password, name } = req.body;
     const { value, error } = REGISTERSCHEMA.validate(req.body);
 
