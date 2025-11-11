@@ -17,13 +17,14 @@ const loginUser = async (req, res, next) => {
     const { value, error } = LOGINSCHEMA.validate(req.body);
 
     if (error) {
+      console.log(error);
       res.status(500).json({ error: config.messages.error });
       return false;
     }
 
     const [userInDb] = await db.query(
-      `SELECT name, email, password, isActive, tenant_id
-       FROM TENANTS WHERE email=?`,
+      `SELECT name, email, password, isActive, userId
+       FROM USERS WHERE email=?`,
       [email]
     );
 
@@ -39,7 +40,7 @@ const loginUser = async (req, res, next) => {
 
     if (userExists) {
       const user = {
-        tenant_id: userInDb[0].tenant_id,
+        userId: userInDb[0].userId,
         email: userInDb[0].email,
       };
 
@@ -80,7 +81,7 @@ const forgotUserPassword = async (req, res, next) => {
 
     await db.query(
       `
-    UPDATE users SET password=? WHERE email=? AND isAdmin=?
+    UPDATE USERS SET password=? WHERE email=? AND isAdmin=?
     `,
       [hashPassword, username, 0]
     );
@@ -133,7 +134,7 @@ const changeUserPassword = async (req, res, next) => {
 
     await db.query(
       `
-    UPDATE users SET password=? WHERE username=? AND isAdmin=?
+    UPDATE USERS SET password=? WHERE username=? AND isAdmin=?
     `,
       [hashPassword, user, 0]
     );
