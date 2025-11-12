@@ -18,7 +18,7 @@ app.use(
 // routes
 const loginRoute = require("./routes/login");
 const registerRoute = require("./routes/register");
-const adminRoute = require("./routes/tenant-admin");
+const adminRoute = require("./routes/admin");
 const categoriesRoute = require("./routes/categories");
 const questionsRoute = require("./routes/questions");
 const addQuestionsRoute = require("./routes/addQuestions");
