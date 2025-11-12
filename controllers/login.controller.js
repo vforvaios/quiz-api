@@ -42,6 +42,7 @@ const loginUser = async (req, res, next) => {
       const user = {
         userId: userInDb[0].userId,
         email: userInDb[0].email,
+        isAdmin: userInDb[0].isAdmin,
       };
 
       jwt.sign(
