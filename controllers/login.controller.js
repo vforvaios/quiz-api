@@ -51,7 +51,7 @@ const loginUser = async (req, res, next) => {
         { expiresIn: "1h" },
         (err, token) => {
           res.status(200).json({
-            userLoggedIn: { ...user },
+            ...user,
             token,
           });
         }
