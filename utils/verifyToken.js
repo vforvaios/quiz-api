@@ -19,7 +19,7 @@ const verifyToken = (req, res, next) => {
         // set the token
         req.token = brToken;
         req.authData = authData;
-        req.tenant_id = authData.user?.tenant_id;
+        req.isAdmin = authData.user?.isAdmin;
         next();
       }
     });
