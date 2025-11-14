@@ -13,9 +13,7 @@ const getAdminQuestions = async (req, res, next) => {
     let placeholdersVariables = [];
 
     // CONSTRUCT CATEGORY SQL PARTS
-    let categoryInnerJoin = category
-      ? ` INNER JOIN CATEGORIES_QUESTIONS on q.id = CATEGORIES_QUESTIONS.questionId`
-      : "";
+    let categoryInnerJoin = ` LEFT JOIN CATEGORIES_QUESTIONS cq on q.id = cq.questionId`;
 
     let questionWherePart = question
       ? ` AND q.question like CONCAT('%', ?, '%') `
@@ -23,14 +21,12 @@ const getAdminQuestions = async (req, res, next) => {
     if (question) {
       placeholdersVariables.push(question);
     }
-    let categoryWherePart = category
-      ? ` AND CATEGORIES_QUESTIONS.categoryId=?`
-      : ``;
+    let categoryWherePart = category ? ` AND cq.categoryId=?` : ``;
     if (category) {
       placeholdersVariables.push(category);
     }
 
-    sql_results = `SELECT distinct q.id, q.question FROM QUESTIONS q
+    sql_results = `SELECT distinct q.id, q.question, cq.categoryId FROM QUESTIONS q
     ${categoryInnerJoin}
     ${wherePart}
     ${questionWherePart}
