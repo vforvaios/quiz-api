@@ -61,6 +61,7 @@ const loginUser = async (req, res, next) => {
     }
   } catch (error) {
     res.sendStatus(401);
+    console.log(error);
     next(error);
   }
 };
