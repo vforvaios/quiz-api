@@ -52,6 +52,24 @@ const getAdminQuestions = async (req, res, next) => {
   }
 };
 
+const getCategories = async (req, res, next) => {
+  try {
+    const [categories] = await db.query(
+      `
+      SELECT * FROM CATEGORIES
+      `
+    );
+    res.status(200).json({
+      categories,
+    });
+  } catch (error) {
+    res.sendStatus(401);
+    console.log(error);
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminQuestions,
+  getCategories,
 };

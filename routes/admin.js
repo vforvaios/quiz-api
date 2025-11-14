@@ -11,5 +11,6 @@ router.get(
   // verifyTenantId,
   Admin.getAdminQuestions
 );
+router.get("/categories", Admin.getCategories);
 
 module.exports = router;
