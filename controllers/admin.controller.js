@@ -26,11 +26,21 @@ const getAdminQuestions = async (req, res, next) => {
       placeholdersVariables.push(category);
     }
 
-    sql_results = `SELECT distinct q.id, q.question, cq.categoryId FROM QUESTIONS q
+    sql_results = `
+      SELECT distinct q.id, q.question, cq.categoryId, JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id', a.id,
+          'answer', a.answer,
+          'isCorrect', a.isCorrect
+        )
+      ) AS answers 
+      FROM QUESTIONS q
+      LEFT JOIN ANSWERS a ON q.id = a.questionId 
     ${categoryInnerJoin}
     ${wherePart}
     ${questionWherePart}
     ${categoryWherePart}
+    GROUP BY q.id
     ORDER BY q.id
     LIMIT ${(page - 1) * config.recordsPerPage}, ${config.recordsPerPage}
     `;
@@ -44,6 +54,11 @@ const getAdminQuestions = async (req, res, next) => {
 
     const [questions] = await db.query(sql_results, placeholdersVariables);
     const [total] = await db.query(sql_count_results, placeholdersVariables);
+    questions.forEach((q) => {
+      if (typeof q.answers === "string") {
+        q.answers = JSON.parse(q.answers);
+      }
+    });
 
     res.json({ questions, total: total[0].total });
   } catch (error) {
