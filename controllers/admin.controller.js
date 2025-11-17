@@ -151,7 +151,7 @@ const updateQuestion = async (req, res, next) => {
         ]);
         await conn.query(
           `
-          INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES=?
+          INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES ?
           `,
           [answersToBeInserted]
         );

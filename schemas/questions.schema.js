@@ -6,11 +6,15 @@ const QUESTIONSCHEMA = Joi.object().keys({
   categoryId: Joi.number().required(),
   difficultyId: Joi.number().required(),
   isActive: Joi.number().required(),
-  answers: {
-    id: Joi.alternatives().try(Joi.number(), Joi.string()).required(),
-    answer: Joi.string().required(),
-    isCorrect: Joi.number().required(),
-  },
+  answers: Joi.array()
+    .items(
+      Joi.object({
+        id: Joi.alternatives().try(Joi.number(), Joi.string()).required(),
+        answer: Joi.string().required(),
+        isCorrect: Joi.number().required(),
+      })
+    )
+    .required(),
 });
 
 module.exports = { QUESTIONSCHEMA };
