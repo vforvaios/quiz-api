@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get("/questions", verifyToken, verifyUserAdmin, Admin.getAdminQuestions);
 router.get("/categories", verifyToken, verifyUserAdmin, Admin.getCategories);
+router.get("/difficulties", Admin.getDifficulties);
 
 module.exports = router;

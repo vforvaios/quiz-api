@@ -27,7 +27,7 @@ const getAdminQuestions = async (req, res, next) => {
     }
 
     sql_results = `
-      SELECT distinct q.id, q.question, cq.categoryId, JSON_ARRAYAGG(
+      SELECT distinct q.id, q.question, q.difficultyId, cq.categoryId, JSON_ARRAYAGG(
         JSON_OBJECT(
           'id', a.id,
           'answer', a.answer,
@@ -84,7 +84,25 @@ const getCategories = async (req, res, next) => {
   }
 };
 
+const getDifficulties = async (req, res, next) => {
+  try {
+    const [difficulties] = await db.query(
+      `
+      SELECT * FROM DIFFICULTIES
+      `
+    );
+    res.status(200).json({
+      difficulties,
+    });
+  } catch (error) {
+    res.sendStatus(401);
+    console.log(error);
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminQuestions,
   getCategories,
+  getDifficulties,
 };
