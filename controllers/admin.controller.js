@@ -1,6 +1,8 @@
 const config = require("../config");
 const db = require("../services/db");
 
+const { QUESTIONSCHEMA } = require("../schemas/questions.schema");
+
 const getAdminQuestions = async (req, res, next) => {
   try {
     const category = req.query.category;
@@ -27,7 +29,7 @@ const getAdminQuestions = async (req, res, next) => {
     }
 
     sql_results = `
-      SELECT distinct q.id, q.question, q.difficultyId, cq.categoryId, JSON_ARRAYAGG(
+      SELECT distinct q.id, q.question, q.difficultyId, q.isActive, cq.categoryId, JSON_ARRAYAGG(
         JSON_OBJECT(
           'id', a.id,
           'answer', a.answer,
@@ -102,64 +104,71 @@ const getDifficulties = async (req, res, next) => {
 };
 
 const updateQuestion = async (req, res, next) => {
-  const { id, categoryId, question, difficultyId, answers } = req.body;
+  const { value, error } = QUESTIONSCHEMA.validate(req.body);
 
-  if (answers?.length <= 1) {
-    res
-      .status(500)
-      .json({ message: "Η ερώτηση πρέπει να έχει πάνω από μία απάντηση." });
+  if (error) {
+    console.log(error);
+    res.status(500).json({ error: config.messages.error });
+    return false;
   } else {
-    let conn = await db.getConnection();
-    try {
-      await conn.beginTransaction();
+    const { id, categoryId, question, difficultyId, answers } = req.body;
+    if (answers?.length <= 1) {
+      res
+        .status(500)
+        .json({ message: "Η ερώτηση πρέπει να έχει πάνω από μία απάντηση." });
+    } else {
+      let conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
 
-      // ΑΡΧΙΚΑ ΚΑΝΩ UPDATE ΤΟΝ ΣΥΝΔΥΑΣΜΟ QUESTION/CATEGORY
-      await conn.query(
-        `UPDATE CATEGORIES_QUESTIONS SET categoryId=? WHERE questionId=?`,
-        [categoryId, id]
-      );
+        // ΑΡΧΙΚΑ ΚΑΝΩ UPDATE ΤΟΝ ΣΥΝΔΥΑΣΜΟ QUESTION/CATEGORY
+        await conn.query(
+          `UPDATE CATEGORIES_QUESTIONS SET categoryId=? WHERE questionId=?`,
+          [categoryId, id]
+        );
 
-      // ΜΕΤΑ ΚΑΝΩ UPDATE ΣΤΟ QUESTIONS ΜΕ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΕΡΩΤΗΣΗ ΚΑΙ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΔΥΣΚΟΛΙΑ
-      await conn.query(
-        `
-        UPDATE QUESTIONS SET difficultyId=?, question=? WHERE id=?
-        `,
-        [difficultyId, question, id]
-      );
+        // ΜΕΤΑ ΚΑΝΩ UPDATE ΣΤΟ QUESTIONS ΜΕ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΕΡΩΤΗΣΗ ΚΑΙ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΔΥΣΚΟΛΙΑ
+        await conn.query(
+          `
+          UPDATE QUESTIONS SET difficultyId=?, question=? WHERE id=?
+          `,
+          [difficultyId, question, id]
+        );
 
-      // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
-      await conn.query(
-        `
-        DELETE FROM ANSWERS WHERE questionId=?
-        `,
-        id
-      );
+        // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
+        await conn.query(
+          `
+          DELETE FROM ANSWERS WHERE questionId=?
+          `,
+          id
+        );
 
-      // ΜΕΤΑ ΕΙΣΑΓΩ ΤΙΣ ΚΑΙΝΟΥΡΙΕΣ ANSWERS
-      const answersToBeInserted = answers?.map((ans) => [
-        id,
-        ans.answer,
-        ans.isCorrect,
-      ]);
-      await conn.query(
-        `
-        INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES=?
-        `,
-        [answersToBeInserted]
-      );
+        // ΜΕΤΑ ΕΙΣΑΓΩ ΤΙΣ ΚΑΙΝΟΥΡΙΕΣ ANSWERS
+        const answersToBeInserted = answers?.map((ans) => [
+          id,
+          ans.answer,
+          ans.isCorrect,
+        ]);
+        await conn.query(
+          `
+          INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES=?
+          `,
+          [answersToBeInserted]
+        );
 
-      await conn.commit();
+        await conn.commit();
 
-      res.status(200).json({
-        message: "Η ερώτηση και οι απαντήσεις ενημερώθηκαν επιτυχώς!",
-      });
-    } catch (error) {
-      await conn.rollback();
-      res.sendStatus(401);
-      console.log(error);
-      next(error);
-    } finally {
-      conn.release();
+        res.status(200).json({
+          message: "Η ερώτηση και οι απαντήσεις ενημερώθηκαν επιτυχώς!",
+        });
+      } catch (error) {
+        await conn.rollback();
+        res.sendStatus(401);
+        console.log(error);
+        next(error);
+      } finally {
+        conn.release();
+      }
     }
   }
 };
