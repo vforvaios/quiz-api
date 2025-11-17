@@ -101,8 +101,72 @@ const getDifficulties = async (req, res, next) => {
   }
 };
 
+const updateQuestion = async (req, res, next) => {
+  const { id, categoryId, question, difficultyId, answers } = req.body;
+
+  if (answers?.length <= 1) {
+    res
+      .status(500)
+      .json({ message: "Η ερώτηση πρέπει να έχει πάνω από μία απάντηση." });
+  } else {
+    let conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // ΑΡΧΙΚΑ ΚΑΝΩ UPDATE ΤΟΝ ΣΥΝΔΥΑΣΜΟ QUESTION/CATEGORY
+      await conn.query(
+        `UPDATE CATEGORIES_QUESTIONS SET categoryId=? WHERE questionId=?`,
+        [categoryId, id]
+      );
+
+      // ΜΕΤΑ ΚΑΝΩ UPDATE ΣΤΟ QUESTIONS ΜΕ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΕΡΩΤΗΣΗ ΚΑΙ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΔΥΣΚΟΛΙΑ
+      await conn.query(
+        `
+        UPDATE QUESTIONS SET difficultyId=?, question=? WHERE id=?
+        `,
+        [difficultyId, question, id]
+      );
+
+      // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
+      await conn.query(
+        `
+        DELETE FROM ANSWERS WHERE questionId=?
+        `,
+        id
+      );
+
+      // ΜΕΤΑ ΕΙΣΑΓΩ ΤΙΣ ΚΑΙΝΟΥΡΙΕΣ ANSWERS
+      const answersToBeInserted = answers?.map((ans) => [
+        id,
+        ans.answer,
+        ans.isCorrect,
+      ]);
+      await conn.query(
+        `
+        INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES=?
+        `,
+        [answersToBeInserted]
+      );
+
+      await conn.commit();
+
+      res.status(200).json({
+        message: "Η ερώτηση και οι απαντήσεις ενημερώθηκαν επιτυχώς!",
+      });
+    } catch (error) {
+      await conn.rollback();
+      res.sendStatus(401);
+      console.log(error);
+      next(error);
+    } finally {
+      conn.release();
+    }
+  }
+};
+
 module.exports = {
   getAdminQuestions,
   getCategories,
   getDifficulties,
+  updateQuestion,
 };
