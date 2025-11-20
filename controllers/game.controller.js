@@ -70,13 +70,36 @@ const getLeaderBoard = async (req, res, next) => {
         `
     );
 
-    res
-      .status(200)
-      .json({
-        leaderBoard: leaderBoard?.map((l) =>
-          l?.userId === id ? { ...l, me: true } : { ...l }
-        ),
-      });
+    const [myRanking] = await db.query(
+      `
+          WITH scores AS (
+              SELECT 
+                  u.userId,
+                  u.name,
+                  COALESCE(SUM(us.score), 0) AS totalScore
+              FROM USERS u
+              LEFT JOIN USERS_SCORE us ON u.userId = us.userId
+              GROUP BY u.userId, u.name
+          ),
+          ranked AS (
+              SELECT
+                  *,
+                  RANK() OVER (ORDER BY totalScore DESC) AS rank
+              FROM scores
+          )
+          SELECT *
+          FROM ranked
+          WHERE userId = ?
+          `,
+      [id]
+    );
+
+    res.status(200).json({
+      leaderBoard: leaderBoard?.map((lead) =>
+        lead?.userId === id ? { ...lead, me: true } : { ...lead }
+      ),
+      myRanking: myRanking?.[0],
+    });
   } catch (error) {
     res.sendStatus(401);
     console.log(error);
