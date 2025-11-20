@@ -29,6 +29,30 @@ const saveScore = async (req, res, next) => {
   }
 };
 
+const userProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const [profile] = await db.query(
+      `
+        SELECT SUM(score) as totalScore, COUNT(us.userId) as totalGames, name
+        FROM USERS_SCORE us
+        INNER JOIN USERS u ON u.userId = us.userId
+        WHERE us.userId=?
+        GROUP BY score, us.userId
+        `,
+      [id]
+    );
+
+    res.status(200).json({ profile: profile?.[0] });
+  } catch (error) {
+    res.sendStatus(401);
+    console.log(error);
+    next(error);
+  }
+};
+
 module.exports = {
   saveScore,
+  userProfile,
 };
