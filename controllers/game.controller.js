@@ -35,11 +35,25 @@ const userProfile = async (req, res, next) => {
 
     const [profile] = await db.query(
       `
-        SELECT SUM(score) as totalScore, COUNT(us.userId) as totalGames, name
-        FROM USERS_SCORE us
-        INNER JOIN USERS u ON u.userId = us.userId
-        WHERE us.userId=?
-        GROUP BY score, us.userId
+        WITH scores AS (
+              SELECT 
+                  u.userId,
+                  u.name,
+                  COUNT(u.userId) as totalGames,
+                  COALESCE(SUM(us.score), 0) AS totalScore
+              FROM USERS u
+              LEFT JOIN USERS_SCORE us ON u.userId = us.userId
+              GROUP BY u.userId, u.name
+          ),
+          ranked AS (
+              SELECT
+                  *,
+                  RANK() OVER (ORDER BY totalScore DESC) AS rank
+              FROM scores
+          )
+          SELECT *
+          FROM ranked
+          WHERE userId = ?
         `,
       [id]
     );
