@@ -15,7 +15,12 @@ const saveScore = async (req, res, next) => {
 
     const { userId, score, category, difficulty } = req.body;
 
-    console.log({ userId, score, category, difficulty });
+    await db.query(
+      `
+        INSERT INTO USERS_SCORE(userId, categoryId, difficultyId, score) VALUES(?,?,?,?)
+        `,
+      [userId, category, difficulty, score]
+    );
     res.status(200).json({});
   } catch (error) {
     res.sendStatus(401);
