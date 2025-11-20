@@ -52,7 +52,40 @@ const userProfile = async (req, res, next) => {
   }
 };
 
+const getLeaderBoard = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const [leaderBoard] = await db.query(
+      `
+       SELECT 
+            u.userId,
+            u.name,
+            COALESCE(SUM(us.score), 0) as totalScore
+        FROM USERS u
+        LEFT JOIN USERS_SCORE us ON u.userId = us.userId
+        GROUP BY u.userId, u.name
+        ORDER BY totalScore DESC
+        LIMIT 8
+        `
+    );
+
+    res
+      .status(200)
+      .json({
+        leaderBoard: leaderBoard?.map((l) =>
+          l?.userId === id ? { ...l, me: true } : { ...l }
+        ),
+      });
+  } catch (error) {
+    res.sendStatus(401);
+    console.log(error);
+    next(error);
+  }
+};
+
 module.exports = {
   saveScore,
   userProfile,
+  getLeaderBoard,
 };

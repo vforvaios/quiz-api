@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.post("/save-score", verifyToken, Game.saveScore);
 router.get("/profile/:id", verifyToken, Game.userProfile);
+router.get("/leaderboard/:id", verifyToken, Game.getLeaderBoard);
 
 module.exports = router;
