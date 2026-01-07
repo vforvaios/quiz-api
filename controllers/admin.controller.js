@@ -173,9 +173,61 @@ const updateQuestion = async (req, res, next) => {
   }
 };
 
+const deleteQuestion = async (req, res, next) => {
+  const { value, error } = QUESTIONSCHEMA.validate(req.body);
+
+  if (error) {
+    console.log(error);
+    res.status(500).json({ error: config.messages.error });
+    return false;
+  } else {
+    const { id } = req.body;
+
+    let conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // ΑΡΧΙΚΑ ΚΑΝΩ DELETE ΤΟΝ ΣΥΝΔΥΑΣΜΟ QUESTION/CATEGORY
+      await conn.query(`DELETE FROM CATEGORIES_QUESTIONS WHERE questionId=?`, [
+        id,
+      ]);
+
+      // ΜΕΤΑ ΚΑΝΩ UPDATE ΣΤΟ QUESTIONS ΜΕ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΕΡΩΤΗΣΗ ΚΑΙ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΔΥΣΚΟΛΙΑ
+      await conn.query(
+        `
+          DELETE FROM QUESTIONS WHERE id=?
+          `,
+        [id]
+      );
+
+      // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
+      await conn.query(
+        `
+          DELETE FROM ANSWERS WHERE questionId=?
+          `,
+        id
+      );
+
+      await conn.commit();
+
+      res.status(200).json({
+        message: "Η ερώτηση και οι απαντήσεις διαγράφηκαν επιτυχώς!",
+      });
+    } catch (error) {
+      await conn.rollback();
+      res.sendStatus(401);
+      console.log(error);
+      next(error);
+    } finally {
+      conn.release();
+    }
+  }
+};
+
 module.exports = {
   getAdminQuestions,
   getCategories,
   getDifficulties,
   updateQuestion,
+  deleteQuestion,
 };

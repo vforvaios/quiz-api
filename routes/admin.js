@@ -14,5 +14,11 @@ router.put(
   verifyUserAdmin,
   Admin.updateQuestion
 );
+router.delete(
+  "/questions/:id",
+  verifyToken,
+  verifyUserAdmin,
+  Admin.deleteQuestion
+);
 
 module.exports = router;
