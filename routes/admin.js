@@ -20,5 +20,6 @@ router.delete(
   verifyUserAdmin,
   Admin.deleteQuestion
 );
+router.post("/questions", verifyToken, verifyUserAdmin, Admin.addQuestion);
 
 module.exports = router;

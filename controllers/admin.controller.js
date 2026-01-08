@@ -1,7 +1,10 @@
 const config = require("../config");
 const db = require("../services/db");
 
-const { QUESTIONSCHEMA } = require("../schemas/questions.schema");
+const {
+  QUESTIONSCHEMA,
+  ADDQUESTIONSCHEMA,
+} = require("../schemas/questions.schema");
 
 const getAdminQuestions = async (req, res, next) => {
   try {
@@ -224,10 +227,74 @@ const deleteQuestion = async (req, res, next) => {
   }
 };
 
+const addQuestion = async (req, res, next) => {
+  let conn = await db.getConnection();
+  const { value, error } = ADDQUESTIONSCHEMA.validate(req.body);
+  if (error) {
+    console.log(error);
+    res.status(500).json({ error: config.messages.error });
+    return false;
+  } else {
+    try {
+      const {
+        question,
+        difficultyId,
+        isActive,
+        categoryId,
+        answers,
+      } = req.body;
+
+      await conn.beginTransaction();
+
+      const [
+        questionResult,
+      ] = await conn.query(
+        "INSERT INTO QUESTIONS (question, difficultyId, isActive) VALUES (?,?,?)",
+        [question, difficultyId, Boolean(isActive)]
+      );
+
+      // Υπολογισμός questionIds
+      const questionIdInserted = questionResult.insertId;
+
+      // Υπολογισμός answers
+      const answerValues = answers.reduce(
+        (acc, curr) => [
+          ...acc,
+          [questionIdInserted, curr.answer, curr.isCorrect],
+        ],
+        []
+      );
+
+      await conn.query(
+        "INSERT INTO CATEGORIES_QUESTIONS (categoryId, questionId) VALUES (?,?)",
+        [categoryId, questionIdInserted]
+      );
+
+      // 4️⃣ Batch insert Answers
+
+      await conn.query(
+        "INSERT INTO ANSWERS (questionId, answer, isCorrect) VALUES ?",
+        [answerValues]
+      );
+
+      await conn.commit();
+      res.json({ success: true, message: "Η ερώτηση εισήχθη με επιτυχία!" });
+    } catch (error) {
+      await conn.rollback();
+      res.sendStatus(401);
+      console.log(error);
+      next(error);
+    } finally {
+      conn.release();
+    }
+  }
+};
+
 module.exports = {
   getAdminQuestions,
   getCategories,
   getDifficulties,
   updateQuestion,
   deleteQuestion,
+  addQuestion,
 };
