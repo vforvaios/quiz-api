@@ -1,8 +1,22 @@
 const express = require("express");
+const { Server: SocketServer } = require("socket.io");
 const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+
+const io = new SocketServer({
+  cors: "*",
+  maxHttpBufferSize: 1e8,
+});
+
+io.on("connection", (socket) => {
+  console.log("User Connected");
+
+  socket.on("join", () => {
+    io.emit("user-joined", { message: "User has joined" });
+  });
+});
 
 const errorHandler = require("./errors/errorHandler");
 
@@ -12,7 +26,7 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: ["https://quiz-pwa-nine.vercel.app", "http://localhost:5173"],
-  })
+  }),
 );
 
 // routes
@@ -37,7 +51,7 @@ app.use(errorHandler);
 // initial routes
 app.get("/", (req, res) => {
   res.send(
-    "Express is on the way and listening dude....Give me some api routes to resolve! Bit bucket on the run!!!!!!!!"
+    "Express is on the way and listening dude....Give me some api routes to resolve! Bit bucket on the run!!!!!!!!",
   );
 });
 
