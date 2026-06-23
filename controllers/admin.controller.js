@@ -32,23 +32,24 @@ const getAdminQuestions = async (req, res, next) => {
     }
 
     sql_results = `
-      SELECT distinct q.id, q.question, q.difficultyId, q.isActive, cq.categoryId, JSON_ARRAYAGG(
+      SELECT distinct q.id, q.question, q.difficultyId, q.isActive, JSON_ARRAYAGG(
         JSON_OBJECT(
           'id', a.id,
           'answer', a.answer,
           'isCorrect', a.isCorrect
         )
-      ) AS answers 
+      ) AS answers,
+       GROUP_CONCAT(DISTINCT cq.categoryId) AS categoryIds 
       FROM QUESTIONS q
       LEFT JOIN ANSWERS a ON q.id = a.questionId 
-    ${categoryInnerJoin}
-    ${wherePart}
-    ${questionWherePart}
-    ${categoryWherePart}
-    GROUP BY q.id
-    ORDER BY q.id
-    LIMIT ${(page - 1) * config.recordsPerPage}, ${config.recordsPerPage}
-    `;
+      ${categoryInnerJoin}
+      ${wherePart}
+      ${questionWherePart}
+      ${categoryWherePart}
+      GROUP BY q.id
+      ORDER BY q.id
+      LIMIT ${(page - 1) * config.recordsPerPage}, ${config.recordsPerPage}
+      `;
 
     sql_count_results = `SELECT COUNT(distinct q.id) as total FROM QUESTIONS q 
     ${categoryInnerJoin}
@@ -77,7 +78,7 @@ const getCategories = async (req, res, next) => {
     const [categories] = await db.query(
       `
       SELECT * FROM CATEGORIES
-      `
+      `,
     );
     res.status(200).json({
       categories,
@@ -94,7 +95,7 @@ const getDifficulties = async (req, res, next) => {
     const [difficulties] = await db.query(
       `
       SELECT * FROM DIFFICULTIES
-      `
+      `,
     );
     res.status(200).json({
       difficulties,
@@ -127,7 +128,7 @@ const updateQuestion = async (req, res, next) => {
         // ΑΡΧΙΚΑ ΚΑΝΩ UPDATE ΤΟΝ ΣΥΝΔΥΑΣΜΟ QUESTION/CATEGORY
         await conn.query(
           `UPDATE CATEGORIES_QUESTIONS SET categoryId=? WHERE questionId=?`,
-          [categoryId, id]
+          [categoryId, id],
         );
 
         // ΜΕΤΑ ΚΑΝΩ UPDATE ΣΤΟ QUESTIONS ΜΕ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΕΡΩΤΗΣΗ ΚΑΙ ΤΗΝ ΚΑΙΝΟΥΡΙΑ ΔΥΣΚΟΛΙΑ
@@ -135,7 +136,7 @@ const updateQuestion = async (req, res, next) => {
           `
           UPDATE QUESTIONS SET difficultyId=?, question=? WHERE id=?
           `,
-          [difficultyId, question, id]
+          [difficultyId, question, id],
         );
 
         // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
@@ -143,7 +144,7 @@ const updateQuestion = async (req, res, next) => {
           `
           DELETE FROM ANSWERS WHERE questionId=?
           `,
-          id
+          id,
         );
 
         // ΜΕΤΑ ΕΙΣΑΓΩ ΤΙΣ ΚΑΙΝΟΥΡΙΕΣ ANSWERS
@@ -156,7 +157,7 @@ const updateQuestion = async (req, res, next) => {
           `
           INSERT INTO ANSWERS(questionId, answer, isCorrect) VALUES ?
           `,
-          [answersToBeInserted]
+          [answersToBeInserted],
         );
 
         await conn.commit();
@@ -200,7 +201,7 @@ const deleteQuestion = async (req, res, next) => {
         `
           DELETE FROM QUESTIONS WHERE id=?
           `,
-        [id]
+        [id],
       );
 
       // ΜΕΤΑ ΔΙΑΓΡΑΦΩ ΤΙΣ ΥΠΑΡΧΟΥΣΕΣ ΑΠΑΝΤΗΣΕΙΣ
@@ -208,7 +209,7 @@ const deleteQuestion = async (req, res, next) => {
         `
           DELETE FROM ANSWERS WHERE questionId=?
           `,
-        id
+        id,
       );
 
       await conn.commit();
@@ -250,7 +251,7 @@ const addQuestion = async (req, res, next) => {
         questionResult,
       ] = await conn.query(
         "INSERT INTO QUESTIONS (question, difficultyId, isActive) VALUES (?,?,?)",
-        [question, difficultyId, Boolean(isActive)]
+        [question, difficultyId, Boolean(isActive)],
       );
 
       // Υπολογισμός questionIds
@@ -262,19 +263,19 @@ const addQuestion = async (req, res, next) => {
           ...acc,
           [questionIdInserted, curr.answer, curr.isCorrect],
         ],
-        []
+        [],
       );
 
       await conn.query(
         "INSERT INTO CATEGORIES_QUESTIONS (categoryId, questionId) VALUES (?,?)",
-        [categoryId, questionIdInserted]
+        [categoryId, questionIdInserted],
       );
 
       // 4️⃣ Batch insert Answers
 
       await conn.query(
         "INSERT INTO ANSWERS (questionId, answer, isCorrect) VALUES ?",
-        [answerValues]
+        [answerValues],
       );
 
       await conn.commit();

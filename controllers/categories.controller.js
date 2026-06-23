@@ -1,11 +1,10 @@
 const db = require("../services/db");
 
 const getCategories = async (req, res, next) => {
-  console.log("=======================================");
   try {
     const [categories] = await db.query(
       `
-      SELECT * FROM categories WHERE isActive=?
+      SELECT * FROM CATEGORIES WHERE isActive=?
       `,
       [1],
     );
