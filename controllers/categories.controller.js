@@ -1,12 +1,13 @@
 const db = require("../services/db");
 
 const getCategories = async (req, res, next) => {
+  console.log("=======================================");
   try {
     const [categories] = await db.query(
       `
-      SELECT * FROM CATEGORIES WHERE isActive=?
+      SELECT * FROM categories WHERE isActive=?
       `,
-      [1]
+      [1],
     );
     res.status(200).json({
       trivia_categories: categories?.map((cat) => ({
