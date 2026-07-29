@@ -12,7 +12,7 @@ const getQuestionsByCategoryAndDifficulty = async (req, res, next) => {
         INNER JOIN CATEGORIES_QUESTIONS cq ON cq.questionId = q.id
         WHERE cq.categoryId = ? AND q.difficultyId = ? AND q.isActive = 1
         ORDER BY RAND()               
-        LIMIT 5;
+        LIMIT 10;
       `,
       [category, difficulty]
     );
